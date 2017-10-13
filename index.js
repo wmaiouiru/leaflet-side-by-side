@@ -1,6 +1,6 @@
 var L = require('leaflet')
-require('./layout.css')
-require('./range.css')
+// require('./layout.css')
+// require('./range.css')
 
 var mapWasDragEnabled
 var mapWasTapEnabled
@@ -94,8 +94,15 @@ L.Control.SideBySide = L.Control.extend({
     if (!this._map) {
       return this
     }
+    if (this._leftLayer) {
+      this._leftLayer.getContainer().style.clip = ""
+    }
+    if (this._rightLayer) {
+      this._rightLayer.getContainer().style.clip = ""
+    }
     this._removeEvents()
-    this._container.parentNode.removeChild(this._container)
+    L.DomUtil.remove(this._container)
+
     this._map = null
 
     return this
@@ -124,16 +131,30 @@ L.Control.SideBySide = L.Control.extend({
     this.fire('dividermove', {x: dividerX})
     var clipLeft = 'rect(' + [nw.y, clipX, se.y, nw.x].join('px,') + 'px)'
     var clipRight = 'rect(' + [nw.y, se.x, se.y, clipX].join('px,') + 'px)'
+    if (this._leftLayer) {
+      this._leftLayer.getContainer().style.clip = clipLeft
+    }
+    if (this._rightLayer) {
+      this._rightLayer.getContainer().style.clip = clipRight
+    }
+    /*
     if (this._leftLayers){
       this._leftLayers.forEach(function(layer){
-        layer.getContainer().style.clip = clipLeft
-      })      
+        if(layer.getContainer()){
+          layer.getContainer().style.clip = clipLeft
+        }
+      })
     }
     if (this._rightLayers){
       this._rightLayers.forEach(function(layer){
-        layer.getContainer().style.clip = clipRight
-      })      
+        if(layer.getContainer()){
+          layer.getContainer().style.clip = clipRight
+        }
+      })
     }
+	
+
+    */
   },
 
   _updateLayers: function () {
@@ -171,8 +192,8 @@ L.Control.SideBySide = L.Control.extend({
     map.on('move', this._updateClip, this)
     map.on('layeradd layerremove', this._updateLayers, this)
     on(range, getRangeEvent(range), this._updateClip, this)
-    on(range, 'mousedown touchstart', cancelMapDrag, this)
-    on(range, 'mouseup touchend', uncancelMapDrag, this)
+    on(range, L.Browser.touch ? 'touchstart' : 'mousedown', cancelMapDrag, this)
+    on(range, L.Browser.touch ? 'touchend' : 'mouseup', uncancelMapDrag, this)
   },
 
   _removeEvents: function () {
@@ -180,8 +201,8 @@ L.Control.SideBySide = L.Control.extend({
     var map = this._map
     if (range) {
       off(range, getRangeEvent(range), this._updateClip, this)
-      off(range, 'mousedown touchstart', cancelMapDrag, this)
-      off(range, 'mouseup touchend', uncancelMapDrag, this)
+      off(range, L.Browser.touch ? 'touchstart' : 'mousedown', cancelMapDrag, this)
+      off(range, L.Browser.touch ? 'touchend' : 'mouseup', uncancelMapDrag, this)
     }
     if (map) {
       map.off('layeradd layerremove', this._updateLayers, this)
